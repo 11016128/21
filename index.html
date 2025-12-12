@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>🎰 21点 Blackjack 游戏</title>
+    <title>🎰 扑克牌游戏 - 21点 & 10點半</title>
     <style>
         /* ========== 全局样式 ========== */
         * {
@@ -353,6 +353,51 @@
             margin-bottom: 8px;
         }
 
+        /* ========== 游戏选择器 ========== */
+        #game-selector {
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 15px;
+            padding: 15px;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        #game-selector h3 {
+            color: white;
+            margin-bottom: 15px;
+            font-size: 1.2em;
+        }
+
+        .game-select-buttons {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            flex-wrap: wrap;
+        }
+
+        .btn-game-select {
+            padding: 12px 30px;
+            font-size: 1.1em;
+            font-weight: bold;
+            border: 2px solid var(--accent-color);
+            border-radius: 8px;
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .btn-game-select:hover {
+            background: rgba(255, 255, 255, 0.2);
+            transform: translateY(-2px);
+        }
+
+        .btn-game-select.active {
+            background: var(--accent-color);
+            color: #333;
+            box-shadow: 0 4px 12px rgba(255, 215, 0, 0.5);
+        }
+
         /* ========== 响应式设计 ========== */
         @media (max-width: 1024px) {
             .card {
@@ -416,8 +461,17 @@
     <div id="game-container">
         <!-- 标题 -->
         <header>
-            <h1>🎰 21点 Blackjack</h1>
+            <h1 id="game-title">🎰 21点 Blackjack</h1>
         </header>
+        
+        <!-- 游戏选择器 -->
+        <div id="game-selector">
+            <h3>🎮 选择游戏</h3>
+            <div class="game-select-buttons">
+                <button class="btn-game-select active" data-game="blackjack">21点 Blackjack</button>
+                <button class="btn-game-select" data-game="tenhalf">10點半 Ten & Half</button>
+            </div>
+        </div>
         
         <!-- 信息栏 -->
         <div id="info-bar">
@@ -472,8 +526,50 @@
     <div id="rules-modal" class="modal">
         <div class="modal-content">
             <span class="close">&times;</span>
-            <h2 style="text-align: center; color: #2c5f2d;">21点游戏规则</h2>
+            <h2 id="rules-title" style="text-align: center; color: #2c5f2d;">游戏规则</h2>
             <div id="rules-text">
+                <!-- Rules content will be dynamically loaded based on selected game -->
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ========== 游戏状态 ==========
+        let game = {
+            mode: 'blackjack', // 'blackjack' or 'tenhalf'
+            deck: [],
+            player: {
+                hand: [],
+                score: 0,
+                balance: 1000,
+                bet: 0
+            },
+            dealer: {
+                hand: [],
+                score: 0,
+                hiddenCard: null
+            },
+            phase: 'betting', // 'betting', 'playing', 'dealer', 'end'
+            message: '请下注开始游戏'
+        };
+
+        // ========== 常量 ==========
+        const CONSTANTS = {
+            INITIAL_BALANCE: 1000,
+            MIN_BET: 10,
+            MAX_BET: 500,
+            BLACKJACK_PAYOUT: 1.5,
+            WIN_PAYOUT: 1,
+            DEALER_STAND_VALUE_BJ: 17,
+            DEALER_STAND_VALUE_TH: 7.5,
+            BUST_VALUE_BJ: 21,
+            BUST_VALUE_TH: 10.5,
+            DECK_RESHUFFLE_THRESHOLD: 15
+        };
+        
+        // ========== 游戏规则文本 ==========
+        const GAME_RULES = {
+            blackjack: `
                 <h3>【游戏目标】</h3>
                 <p>获得点数尽可能接近21点，但不能超过21点，同时要比庄家的点数更高。</p>
                 
@@ -525,45 +621,68 @@
                 </ul>
                 
                 <p style="text-align: center; margin-top: 20px; font-size: 1.2em;">祝你好运！🍀</p>
-            </div>
-        </div>
-    </div>
-
-    <script>
-        // ========== 游戏状态 ==========
-        let game = {
-            deck: [],
-            player: {
-                hand: [],
-                score: 0,
-                balance: 1000,
-                bet: 0
-            },
-            dealer: {
-                hand: [],
-                score: 0,
-                hiddenCard: null
-            },
-            phase: 'betting', // 'betting', 'playing', 'dealer', 'end'
-            message: '请下注开始游戏'
-        };
-
-        // ========== 常量 ==========
-        const CONSTANTS = {
-            INITIAL_BALANCE: 1000,
-            MIN_BET: 10,
-            MAX_BET: 500,
-            BLACKJACK_PAYOUT: 1.5,
-            WIN_PAYOUT: 1,
-            DEALER_STAND_VALUE: 17,
-            BUST_VALUE: 21,
-            DECK_RESHUFFLE_THRESHOLD: 15
+            `,
+            tenhalf: `
+                <h3>【游戏目标】</h3>
+                <p>获得点数尽可能接近10.5点，但不能超过10.5点，同时要比庄家的点数更高。</p>
+                
+                <h3>【牌面点数】</h3>
+                <ul>
+                    <li>数字牌 (A-9)：按牌面点数计算（A=1, 2=2, ..., 9=9）</li>
+                    <li>10 牌：算10点</li>
+                    <li>J、Q、K：每张算0.5点（半点）</li>
+                </ul>
+                
+                <h3>【游戏流程】</h3>
+                <ul>
+                    <li><strong>1. 下注</strong>：选择下注金额 ($10/$25/$50/$100)</li>
+                    <li><strong>2. 发牌</strong>：玩家先获得1张牌
+                        <ul>
+                            <li>玩家的牌都是明牌</li>
+                            <li>庄家在玩家停牌后才开始发牌</li>
+                        </ul>
+                    </li>
+                    <li><strong>3. 玩家操作</strong>：
+                        <ul>
+                            <li>要牌 (Hit)：再拿一张牌</li>
+                            <li>停牌 (Stand)：不再要牌，结束操作</li>
+                        </ul>
+                    </li>
+                    <li><strong>4. 庄家操作</strong>：
+                        <ul>
+                            <li>7点或以下：必须要牌</li>
+                            <li>7.5点或以上：必须停牌</li>
+                        </ul>
+                    </li>
+                </ul>
+                
+                <h3>【胜负判定】</h3>
+                <ul>
+                    <li><strong>5小龙</strong>：拿到5张牌不爆牌，自动获胜，赔率 3:2</li>
+                    <li><strong>玩家爆牌</strong>：超过10.5点，立即输掉</li>
+                    <li><strong>庄家爆牌</strong>：玩家未爆牌则获胜，赔率 1:1</li>
+                    <li><strong>比较点数</strong>：都未爆牌时，点数高者获胜</li>
+                    <li><strong>平局 (Push)</strong>：点数相同，退还赌注</li>
+                </ul>
+                
+                <h3>【小提示】</h3>
+                <ul>
+                    <li>人头牌(J/Q/K)只有0.5点，可以灵活运用</li>
+                    <li>8点以上需谨慎决策</li>
+                    <li>争取拿到5张牌获得5小龙</li>
+                    <li>合理管理筹码</li>
+                </ul>
+                
+                <p style="text-align: center; margin-top: 20px; font-size: 1.2em;">祝你好运！🍀</p>
+            `
         };
 
         const BET_OPTIONS = [10, 25, 50, 100];
 
         // ========== DOM 元素 ==========
         const elements = {
+            gameTitle: document.getElementById('game-title'),
+            gameSelectButtons: document.querySelectorAll('.btn-game-select'),
             balanceAmount: document.getElementById('balance-amount'),
             betAmount: document.getElementById('bet-amount'),
             dealerCards: document.getElementById('dealer-cards'),
@@ -577,6 +696,8 @@
             btnRules: document.getElementById('btn-rules'),
             betButtons: document.querySelectorAll('.btn-bet'),
             rulesModal: document.getElementById('rules-modal'),
+            rulesTitle: document.getElementById('rules-title'),
+            rulesText: document.getElementById('rules-text'),
             modalClose: document.querySelector('.close')
         };
 
@@ -609,19 +730,19 @@
             ];
             
             const ranks = [
-                { rank: 'A', value: 11, offset: 1 },
-                { rank: '2', value: 2, offset: 2 },
-                { rank: '3', value: 3, offset: 3 },
-                { rank: '4', value: 4, offset: 4 },
-                { rank: '5', value: 5, offset: 5 },
-                { rank: '6', value: 6, offset: 6 },
-                { rank: '7', value: 7, offset: 7 },
-                { rank: '8', value: 8, offset: 8 },
-                { rank: '9', value: 9, offset: 9 },
-                { rank: '10', value: 10, offset: 10 },
-                { rank: 'J', value: 10, offset: 11 },
-                { rank: 'Q', value: 10, offset: 13 },
-                { rank: 'K', value: 10, offset: 14 }
+                { rank: 'A', valueBJ: 11, valueTH: 1, offset: 1 },
+                { rank: '2', valueBJ: 2, valueTH: 2, offset: 2 },
+                { rank: '3', valueBJ: 3, valueTH: 3, offset: 3 },
+                { rank: '4', valueBJ: 4, valueTH: 4, offset: 4 },
+                { rank: '5', valueBJ: 5, valueTH: 5, offset: 5 },
+                { rank: '6', valueBJ: 6, valueTH: 6, offset: 6 },
+                { rank: '7', valueBJ: 7, valueTH: 7, offset: 7 },
+                { rank: '8', valueBJ: 8, valueTH: 8, offset: 8 },
+                { rank: '9', valueBJ: 9, valueTH: 9, offset: 9 },
+                { rank: '10', valueBJ: 10, valueTH: 10, offset: 10 },
+                { rank: 'J', valueBJ: 10, valueTH: 0.5, offset: 11 },
+                { rank: 'Q', valueBJ: 10, valueTH: 0.5, offset: 13 },
+                { rank: 'K', valueBJ: 10, valueTH: 0.5, offset: 14 }
             ];
             
             const deck = [];
@@ -631,7 +752,8 @@
                     deck.push({
                         suit: suit.name,
                         rank: rankInfo.rank,
-                        value: rankInfo.value,
+                        valueBJ: rankInfo.valueBJ,
+                        valueTH: rankInfo.valueTH,
                         unicode: String.fromCodePoint(suit.baseCode + rankInfo.offset),
                         color: suit.color
                     });
@@ -664,6 +786,15 @@
 
         // ========== 计算手牌点数 ==========
         function calculateScore(hand) {
+            if (game.mode === 'blackjack') {
+                return calculateScoreBlackjack(hand);
+            } else {
+                return calculateScoreTenHalf(hand);
+            }
+        }
+        
+        // ========== 21点计分 ==========
+        function calculateScoreBlackjack(hand) {
             let score = 0;
             let aces = 0;
             
@@ -672,13 +803,24 @@
                     aces++;
                     score += 11;
                 } else {
-                    score += card.value;
+                    score += card.valueBJ;
                 }
             }
             
             while (score > 21 && aces > 0) {
                 score -= 10;
                 aces--;
+            }
+            
+            return score;
+        }
+        
+        // ========== 10點半计分 ==========
+        function calculateScoreTenHalf(hand) {
+            let score = 0;
+            
+            for (let card of hand) {
+                score += card.valueTH;
             }
             
             return score;
@@ -711,25 +853,36 @@
             game.player.hand = [];
             game.dealer.hand = [];
             
-            // 发牌
-            game.player.hand.push(dealCard());
-            game.dealer.hand.push(dealCard());
-            game.player.hand.push(dealCard());
-            game.dealer.hiddenCard = dealCard();
-            game.dealer.hand.push(game.dealer.hiddenCard);
-            
-            // 计算点数
-            game.player.score = calculateScore(game.player.hand);
-            game.dealer.score = calculateScore([game.dealer.hand[0]]);
-            
-            // 检查 Blackjack
-            if (isBlackjack(game.player.hand)) {
-                if (isBlackjack(game.dealer.hand)) {
-                    endRound('push', '双方都是 Blackjack！平局！');
+            if (game.mode === 'blackjack') {
+                // 21点: 玩家和庄家各发2张牌
+                game.player.hand.push(dealCard());
+                game.dealer.hand.push(dealCard());
+                game.player.hand.push(dealCard());
+                game.dealer.hiddenCard = dealCard();
+                game.dealer.hand.push(game.dealer.hiddenCard);
+                
+                // 计算点数
+                game.player.score = calculateScore(game.player.hand);
+                game.dealer.score = calculateScore([game.dealer.hand[0]]);
+                
+                // 检查 Blackjack
+                if (isBlackjack(game.player.hand)) {
+                    if (isBlackjack(game.dealer.hand)) {
+                        endRound('push', '双方都是 Blackjack！平局！');
+                    } else {
+                        endRound('blackjack', '🎉 Blackjack! 你赢了！');
+                    }
                 } else {
-                    endRound('blackjack', '🎉 Blackjack! 你赢了！');
+                    showMessage('轮到你操作了！');
+                    updateUI();
                 }
             } else {
+                // 10點半: 玩家先发1张牌
+                game.player.hand.push(dealCard());
+                game.player.score = calculateScore(game.player.hand);
+                game.dealer.hiddenCard = null;
+                game.dealer.score = 0;
+                
                 showMessage('轮到你操作了！');
                 updateUI();
             }
@@ -743,9 +896,16 @@
             game.player.hand.push(card);
             game.player.score = calculateScore(game.player.hand);
             
-            if (game.player.score > 21) {
+            const bustValue = game.mode === 'blackjack' ? CONSTANTS.BUST_VALUE_BJ : CONSTANTS.BUST_VALUE_TH;
+            
+            if (game.player.score > bustValue) {
                 endRound('lose', '爆牌了！你输了！');
-            } else if (game.player.score === 21) {
+            } else if (game.mode === 'blackjack' && game.player.score === 21) {
+                stand();
+            } else if (game.mode === 'tenhalf' && game.player.hand.length === 5 && game.player.score <= bustValue) {
+                // 10點半特殊规则：5小龙
+                endRound('fivesmall', '🎉 5小龙！你赢了！');
+            } else if (game.mode === 'tenhalf' && game.player.score === 10.5) {
                 stand();
             } else {
                 showMessage(`当前点数: ${game.player.score}，继续要牌或停牌？`);
@@ -768,12 +928,20 @@
 
         // ========== 庄家自动操作 ==========
         function dealerPlay() {
-            // 显示暗牌
-            game.dealer.score = calculateScore(game.dealer.hand);
+            const dealerStandValue = game.mode === 'blackjack' ? CONSTANTS.DEALER_STAND_VALUE_BJ : CONSTANTS.DEALER_STAND_VALUE_TH;
+            
+            if (game.mode === 'tenhalf') {
+                // 10點半: 庄家从0开始发牌
+                game.dealer.hand = [];
+                game.dealer.score = 0;
+            } else {
+                // 21点: 显示暗牌
+                game.dealer.score = calculateScore(game.dealer.hand);
+            }
             updateUI();
             
             const dealerTurn = () => {
-                if (game.dealer.score < CONSTANTS.DEALER_STAND_VALUE) {
+                if (game.dealer.score < dealerStandValue) {
                     setTimeout(() => {
                         const card = dealCard();
                         game.dealer.hand.push(card);
@@ -795,23 +963,40 @@
         function determineWinner() {
             const playerScore = game.player.score;
             const dealerScore = game.dealer.score;
-            const playerBlackjack = isBlackjack(game.player.hand);
-            const dealerBlackjack = isBlackjack(game.dealer.hand);
+            const bustValue = game.mode === 'blackjack' ? CONSTANTS.BUST_VALUE_BJ : CONSTANTS.BUST_VALUE_TH;
             
-            if (playerScore > 21) {
-                endRound('lose', '爆牌了！你输了！');
-            } else if (playerBlackjack && !dealerBlackjack) {
-                endRound('blackjack', '🎉 Blackjack! 你赢了！');
-            } else if (playerBlackjack && dealerBlackjack) {
-                endRound('push', '平局！退还赌注');
-            } else if (dealerScore > 21) {
-                endRound('win', '庄家爆牌！你赢了！');
-            } else if (playerScore > dealerScore) {
-                endRound('win', '你赢了！');
-            } else if (playerScore === dealerScore) {
-                endRound('push', '平局！退还赌注');
+            if (game.mode === 'blackjack') {
+                const playerBlackjack = isBlackjack(game.player.hand);
+                const dealerBlackjack = isBlackjack(game.dealer.hand);
+                
+                if (playerScore > bustValue) {
+                    endRound('lose', '爆牌了！你输了！');
+                } else if (playerBlackjack && !dealerBlackjack) {
+                    endRound('blackjack', '🎉 Blackjack! 你赢了！');
+                } else if (playerBlackjack && dealerBlackjack) {
+                    endRound('push', '平局！退还赌注');
+                } else if (dealerScore > bustValue) {
+                    endRound('win', '庄家爆牌！你赢了！');
+                } else if (playerScore > dealerScore) {
+                    endRound('win', '你赢了！');
+                } else if (playerScore === dealerScore) {
+                    endRound('push', '平局！退还赌注');
+                } else {
+                    endRound('lose', '你输了！');
+                }
             } else {
-                endRound('lose', '你输了！');
+                // 10點半模式
+                if (playerScore > bustValue) {
+                    endRound('lose', '爆牌了！你输了！');
+                } else if (dealerScore > bustValue) {
+                    endRound('win', '庄家爆牌！你赢了！');
+                } else if (playerScore > dealerScore) {
+                    endRound('win', '你赢了！');
+                } else if (playerScore === dealerScore) {
+                    endRound('push', '平局！退还赌注');
+                } else {
+                    endRound('lose', '你输了！');
+                }
             }
         }
 
@@ -823,6 +1008,7 @@
             
             switch (result) {
                 case 'blackjack':
+                case 'fivesmall':
                     payout = game.player.bet * (1 + CONSTANTS.BLACKJACK_PAYOUT);
                     break;
                 case 'win':
@@ -906,7 +1092,7 @@
                 elements.dealerCards.appendChild(cardDiv);
             });
             
-            if (game.phase === 'playing') {
+            if (game.phase === 'playing' && game.mode === 'blackjack' && game.dealer.hand.length > 0) {
                 elements.dealerScore.textContent = calculateScore([game.dealer.hand[0]]);
             } else {
                 elements.dealerScore.textContent = game.dealer.score;
@@ -948,13 +1134,57 @@
             elements.btnNewGame.disabled = game.phase === 'playing' || game.phase === 'dealer';
         }
 
+        // ========== 切换游戏模式 ==========
+        function changeGameMode(mode) {
+            if (game.phase !== 'betting' && game.phase !== 'end') {
+                showMessage('请先完成当前回合！');
+                return;
+            }
+            
+            game.mode = mode;
+            
+            // 更新标题
+            if (mode === 'blackjack') {
+                elements.gameTitle.textContent = '🎰 21点 Blackjack';
+            } else {
+                elements.gameTitle.textContent = '🎰 10點半 Ten & Half';
+            }
+            
+            // 更新按钮状态
+            elements.gameSelectButtons.forEach(btn => {
+                if (btn.dataset.game === mode) {
+                    btn.classList.add('active');
+                } else {
+                    btn.classList.remove('active');
+                }
+            });
+            
+            // 重置游戏
+            newGame();
+        }
+        
         // ========== 显示规则 ==========
         function showRules() {
+            const mode = game.mode;
+            if (mode === 'blackjack') {
+                elements.rulesTitle.textContent = '21点游戏规则';
+            } else {
+                elements.rulesTitle.textContent = '10點半游戏规则';
+            }
+            elements.rulesText.innerHTML = GAME_RULES[mode];
             elements.rulesModal.style.display = 'block';
         }
 
         // ========== 事件监听器 ==========
         function attachEventListeners() {
+            // 游戏选择按钮
+            elements.gameSelectButtons.forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const gameMode = this.dataset.game;
+                    changeGameMode(gameMode);
+                });
+            });
+            
             // 下注按钮
             elements.betButtons.forEach(btn => {
                 btn.addEventListener('click', function() {
