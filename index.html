@@ -560,8 +560,9 @@
             MAX_BET: 500,
             BLACKJACK_PAYOUT: 1.5,
             WIN_PAYOUT: 1,
+            TIANGONG_PAYOUT: 2,  // 天公 (Heaven) 赔率
             DEALER_STAND_VALUE_BJ: 17,
-            DEALER_STAND_VALUE_TH: 7.5,
+            DEALER_STAND_VALUE_TH: 8,  // 庄家8点以上停牌
             BUST_VALUE_BJ: 21,
             BUST_VALUE_TH: 10.5,
             DECK_RESHUFFLE_THRESHOLD: 15
@@ -623,54 +624,63 @@
                 <p style="text-align: center; margin-top: 20px; font-size: 1.2em;">祝你好运！🍀</p>
             `,
             tenhalf: `
-                <h3>【游戏目标】</h3>
-                <p>获得点数尽可能接近10.5点，但不能超过10.5点，同时要比庄家的点数更高。</p>
+                <h3>【游戏概述】</h3>
+                <p>10点半（又称"十点半"）是一种流行的华人扑克牌游戏，类似于21点，但目标点数是10.5点而非21点。</p>
                 
                 <h3>【牌面点数】</h3>
                 <ul>
-                    <li>数字牌 (A-9)：按牌面点数计算（A=1, 2=2, ..., 9=9）</li>
-                    <li>10 牌：算10点</li>
-                    <li>J、Q、K：每张算0.5点（半点）</li>
+                    <li><strong>A (Ace)</strong>：1点</li>
+                    <li><strong>2-10</strong>：按牌面数字计算</li>
+                    <li><strong>J、Q、K</strong>：都算0.5点</li>
                 </ul>
+                
+                <h3>【游戏目标】</h3>
+                <p>手牌总点数尽可能接近但不超过10.5点，超过则"爆牌"（输掉）。</p>
                 
                 <h3>【游戏流程】</h3>
                 <ul>
-                    <li><strong>1. 下注</strong>：选择下注金额 ($10/$25/$50/$100)</li>
-                    <li><strong>2. 发牌</strong>：玩家先获得1张牌
+                    <li><strong>1. 发牌</strong>：
                         <ul>
-                            <li>玩家的牌都是明牌</li>
-                            <li>庄家在玩家停牌后才开始发牌</li>
+                            <li>玩家获得1张牌（明牌）</li>
+                            <li>庄家在玩家停牌后才发牌</li>
                         </ul>
                     </li>
-                    <li><strong>3. 玩家操作</strong>：
+                    <li><strong>2. 要牌阶段</strong>：
                         <ul>
-                            <li>要牌 (Hit)：再拿一张牌</li>
-                            <li>停牌 (Stand)：不再要牌，结束操作</li>
+                            <li>玩家决定是否"要牌"或"停牌"</li>
+                            <li>可以连续要牌，直到满意或爆牌</li>
+                            <li>如果超过10.5点即爆牌，立即输掉</li>
                         </ul>
                     </li>
-                    <li><strong>4. 庄家操作</strong>：
+                    <li><strong>3. 庄家要牌</strong>：
                         <ul>
-                            <li>7点或以下：必须要牌</li>
-                            <li>7.5点或以上：必须停牌</li>
+                            <li>玩家停牌后，庄家按规则要牌</li>
+                            <li>庄家点数小于8点必须要牌</li>
+                            <li>庄家点数8点或以上必须停牌</li>
+                        </ul>
+                    </li>
+                    <li><strong>4. 比牌</strong>：
+                        <ul>
+                            <li>没有爆牌的玩家与庄家比较点数</li>
+                            <li>点数大者获胜</li>
+                            <li>点数相同庄家赢</li>
                         </ul>
                     </li>
                 </ul>
                 
-                <h3>【胜负判定】</h3>
+                <h3>【特殊牌型】</h3>
                 <ul>
-                    <li><strong>5小龙</strong>：拿到5张牌不爆牌，自动获胜，赔率 3:2</li>
-                    <li><strong>玩家爆牌</strong>：超过10.5点，立即输掉</li>
-                    <li><strong>庄家爆牌</strong>：玩家未爆牌则获胜，赔率 1:1</li>
-                    <li><strong>比较点数</strong>：都未爆牌时，点数高者获胜</li>
-                    <li><strong>平局 (Push)</strong>：点数相同，退还赌注</li>
+                    <li><strong>天公（10点半）</strong>：第一张牌是10，第二张是J/Q/K，或反之。赔率 2:1</li>
+                    <li><strong>五小龙/五小</strong>：拿到5张牌且总点数不超过10.5点。赔率 3:2</li>
+                    <li><strong>人公</strong>：第一手牌（前两张）即为10点半（天公）</li>
                 </ul>
                 
                 <h3>【小提示】</h3>
                 <ul>
-                    <li>人头牌(J/Q/K)只有0.5点，可以灵活运用</li>
+                    <li>人头牌(J/Q/K)只有0.5点，要善用</li>
                     <li>8点以上需谨慎决策</li>
-                    <li>争取拿到5张牌获得5小龙</li>
-                    <li>合理管理筹码</li>
+                    <li>争取拿到5张牌获得五小龙</li>
+                    <li>注意庄家平局时获胜的规则</li>
                 </ul>
                 
                 <p style="text-align: center; margin-top: 20px; font-size: 1.2em;">祝你好运！🍀</p>
@@ -832,6 +842,26 @@
             const score = calculateScore(hand);
             return score === 21;
         }
+        
+        // ========== 判断天公 (10点半特殊牌型) ==========
+        function isTiangong(hand) {
+            if (hand.length !== 2) return false;
+            const score = calculateScoreTenHalf(hand);
+            if (score !== 10.5) return false;
+            
+            // 必须是一张10和一张J/Q/K的组合
+            const has10 = hand.some(card => card.rank === '10');
+            const hasFace = hand.some(card => ['J', 'Q', 'K'].includes(card.rank));
+            
+            return has10 && hasFace;
+        }
+        
+        // ========== 判断五小龙 (5张牌不爆牌) ==========
+        function isWuXiaoLong(hand) {
+            if (hand.length !== 5) return false;
+            const score = calculateScoreTenHalf(hand);
+            return score <= CONSTANTS.BUST_VALUE_TH;
+        }
 
         // ========== 下注 ==========
         function placeBet(amount) {
@@ -902,11 +932,20 @@
                 endRound('lose', '爆牌了！你输了！');
             } else if (game.mode === 'blackjack' && game.player.score === 21) {
                 stand();
-            } else if (game.mode === 'tenhalf' && game.player.hand.length === 5 && game.player.score <= bustValue) {
-                // 10點半特殊规则：5小龙
-                endRound('fivesmall', '🎉 5小龙！你赢了！');
-            } else if (game.mode === 'tenhalf' && game.player.score === 10.5) {
-                stand();
+            } else if (game.mode === 'tenhalf') {
+                // 10點半特殊判定
+                if (game.player.hand.length === 2 && isTiangong(game.player.hand)) {
+                    // 天公/人公：前两张即为10.5（10+J/Q/K）
+                    endRound('tiangong', '🎉 天公（10点半）！你赢了！');
+                } else if (isWuXiaoLong(game.player.hand)) {
+                    // 五小龙：5张牌不爆牌
+                    endRound('wuxiaolong', '🎉 五小龙！你赢了！');
+                } else if (game.player.score === 10.5) {
+                    stand();
+                } else {
+                    showMessage(`当前点数: ${game.player.score}，继续要牌或停牌？`);
+                    updateUI();
+                }
             } else {
                 showMessage(`当前点数: ${game.player.score}，继续要牌或停牌？`);
                 updateUI();
@@ -993,7 +1032,8 @@
                 } else if (playerScore > dealerScore) {
                     endRound('win', '你赢了！');
                 } else if (playerScore === dealerScore) {
-                    endRound('push', '平局！退还赌注');
+                    // 10點半规则：点数相同庄家赢
+                    endRound('lose', '点数相同，庄家赢！');
                 } else {
                     endRound('lose', '你输了！');
                 }
@@ -1008,7 +1048,14 @@
             
             switch (result) {
                 case 'blackjack':
-                case 'fivesmall':
+                    payout = game.player.bet * (1 + CONSTANTS.BLACKJACK_PAYOUT);
+                    break;
+                case 'tiangong':
+                    // 天公：2:1赔率
+                    payout = game.player.bet * (1 + CONSTANTS.TIANGONG_PAYOUT);
+                    break;
+                case 'wuxiaolong':
+                    // 五小龙：3:2赔率
                     payout = game.player.bet * (1 + CONSTANTS.BLACKJACK_PAYOUT);
                     break;
                 case 'win':
